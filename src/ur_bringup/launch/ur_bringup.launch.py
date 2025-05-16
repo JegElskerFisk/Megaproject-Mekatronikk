@@ -28,6 +28,12 @@ def generate_launch_description():
             default_value="false",
             description="Use fake hardware for simulation."
         ),
+
+        DeclareLaunchArgument(
+            "initial_joint_controller",
+            default_value="scaled_joint_trajectory_controller",
+            description="The controller to start at launch"
+        ),
     ]
 
     ur_driver = IncludeLaunchDescription(
