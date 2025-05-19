@@ -47,7 +47,8 @@ def generate_launch_description():
         launch_arguments={
             "ur_type": ur_type,
             "robot_ip": robot_ip,
-            "use_fake_hardware": use_fake_hw
+            "use_mock_hardware": use_fake_hw,
+            "launch_rviz": "false"
         }.items(),
     )
 
@@ -59,7 +60,10 @@ def generate_launch_description():
                 "ur_moveit.launch.py"
             )
         ),
-        launch_arguments={"ur_type": ur_type}.items(),
+        launch_arguments={
+            "ur_type": ur_type,
+            "launch_rviz": "true"
+        }.items(),
     )
 
     return LaunchDescription(declare_args + [ur_driver, moveit])
