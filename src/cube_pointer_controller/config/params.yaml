@@ -9,6 +9,12 @@ cube_pointer_controller:
     velocity_scaling:      0.30
     acceleration_scaling:  0.30
 
-    # Re-plan thresholds (future feature)
+    # Re-plan thresholds
     replan_threshold_xyz:  0.02     # metres
-    replan_threshold_yaw:  0.15     # radians
+
+    # Mock cubes configuration
+    mock_cubes_xy:     [0.30,  0.10,
+                        0.35, -0.12,
+                        0.25,  0.18]
+
+    z_offset:          0.10          # tool-tip 10 cm above table
