@@ -10,7 +10,7 @@ def generate_launch_description():
 
     demo_move = Node(
         package="cube_pointer_controller",
-        executable="simple_move",
+        executable="controller_node",
         name="cube_pointer_controller",
         output="screen",
         parameters=[param_file] if param_file.exists() else [],

@@ -12,17 +12,20 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclpy REQUIRED)
 
 
-add_executable(simple_move src/simple_move.cpp)
-ament_target_dependencies(simple_move
+add_executable(controller_node src/controller_node.cpp)
+ament_target_dependencies(controller_node
   rclcpp
   moveit_ros_planning_interface
-)
+  std_srvs)
 
-install(TARGETS simple_move
+# Install the controller node executable
+install(TARGETS controller_node
   DESTINATION lib/${PROJECT_NAME})
 
-
+# Install launch files and configuration
 install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
