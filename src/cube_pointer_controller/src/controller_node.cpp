@@ -46,6 +46,7 @@ public:
         move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
             shared_from_this(), "ur_manipulator");
 
+        move_group_->setPlannerId("PTP");
         move_group_->setMaxVelocityScalingFactor(vel_scaling);
         move_group_->setMaxAccelerationScalingFactor(acc_scaling);
         RCLCPP_INFO(get_logger(), "MoveGroup ready.");
@@ -125,6 +126,7 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         } });
+        
     }
 
 private:

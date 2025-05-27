@@ -3,7 +3,7 @@ cube_pointer_controller:
 
     # Joint-space “home” pose for your UR3 (radians)
     # order: shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3
-    home_joint_values: [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+    home_joint_values: [-1.57,-1.57, 0.0, -1.57, 0.0, 0.0]
 
     # Max velocity & acceleration scaling (0.0–1.0)
     velocity_scaling:      0.30
