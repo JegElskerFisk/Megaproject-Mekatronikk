@@ -6,6 +6,15 @@ def generate_launch_description():
         Node(
             package='scene',
             executable='interactive_scene',
+            name='interactive_scene',
             output='screen',
+            emulate_tty=True,
+        ),
+        Node(
+            package='scene',
+            executable='table_scene',
+            name='table_scene',
+            output='screen',
+            emulate_tty=True,
         )
     ])

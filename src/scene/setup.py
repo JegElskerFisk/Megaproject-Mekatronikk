@@ -15,6 +15,7 @@ setup(
     entry_points={
         'console_scripts': [
             'interactive_scene = scene.interactive_scene:main',
+            'table_scene = scene.table_scene:main',
         ],
     },
 )
