@@ -6,15 +6,10 @@ cube_pointer_controller:
     home_joint_values: [-1.57,-1.57, 0.0, -1.57, 0.0, 0.0]
 
     # Max velocity & acceleration scaling (0.0–1.0)
-    velocity_scaling:      0.30
-    acceleration_scaling:  0.30
+    velocity_scaling:      1.00
+    acceleration_scaling:  1.00
 
     # Re-plan thresholds
     replan_threshold_xyz:  0.02     # metres
-
-    # Mock cubes configuration
-    mock_cubes_xy:     [0.30,  0.10,
-                        0.35, -0.12,
-                        0.25,  0.18]
 
     z_offset:          0.10          # tool-tip 10 cm above table

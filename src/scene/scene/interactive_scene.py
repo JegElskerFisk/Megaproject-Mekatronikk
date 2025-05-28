@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-# scene/interactive_scene.py  –  kuber + TF-kringkasting
+# scene/interactive_scene.py  – live cubes + TF broadcaster (continuous)
 
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from std_msgs.msg import Header, ColorRGBA
 from geometry_msgs.msg import Pose, TransformStamped
 from shape_msgs.msg import SolidPrimitive
@@ -11,36 +12,42 @@ from moveit_msgs.msg import (
 )
 from moveit_msgs.srv import ApplyPlanningScene
 import tf2_ros
+import math
 import time
 
-BASE = "base_link"                 # robotens base-frame
-
-# ───── kubeparametre ──────────────────────────────────────────────
-CUBE_SIZE = 0.05                   # 5 cm kant
-CUBE_Z    = 0.025                  # senterhøyde
-CUBE_X    = (-0.30, 0.0, 0.30)     # tre posisjoner
+# ───── cube parameters ──────────────────────────────────────────
+CUBE_SIZE = 0.05                     # 5 cm
+CUBE_Z    = 0.025                    # centre height
+CUBE_X    = (-0.30, 0.50, 0.30)       # three x-positions
 
 CUBE_IDS  = [f"cube{i+1}" for i in range(3)]
 CUBE_COL  = (
-    ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),   # rød
-    ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0),   # grønn
-    ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),   # blå
+    ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),
+    ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0),
+    ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0),
 )
 
 class InteractiveScene(Node):
     def __init__(self):
         super().__init__("interactive_scene")
 
-        # TF-broadcaster
+        # parameter to match your robot base frame  ───── NEW
+        self.declare_parameter("base", "base")
+        self.base = self.get_parameter("base").get_parameter_value().string_value
+
+        # TF broadcaster
         self.br = tf2_ros.TransformBroadcaster(self)
 
-        # 1) bygg og send kubene til PlanningScene
+        # internal pose cache              ───── NEW
+        self.cube_pose_cache = {}
+
+        # 1) build & send cubes to planning scene
         self.add_cubes_to_planning_scene()
 
-        # 2) kringkast initiale TF-rammer
-        self.broadcast_initial_tf()
+        # 2) broadcast TF at 10 Hz         ───── NEW
+        self.create_timer(0.1, self.publish_all_tf)   # 10 Hz
 
-        # 3) lytt på fremtidige diff-meldinger for å følge interaktiv flytting
+        # 3) listen for interactive moves and update cache
         self.create_subscription(
             PlanningScene,
             "/monitored_planning_scene",
@@ -50,68 +57,62 @@ class InteractiveScene(Node):
 
     # ----------------------------------------------------------
     def add_cubes_to_planning_scene(self):
-        prim_cube = SolidPrimitive(
-            type=SolidPrimitive.BOX,
-            dimensions=[CUBE_SIZE] * 3
-        )
+        prim = SolidPrimitive(type=SolidPrimitive.BOX,
+                              dimensions=[CUBE_SIZE] * 3)
 
-        cube_objs   = []
-        cube_colors = []
-
+        cubes, colors = [], []
         for cid, x, col in zip(CUBE_IDS, CUBE_X, CUBE_COL):
             pose = Pose()
             pose.position.x = x
+            pose.position.y = -0.3
             pose.position.z = CUBE_Z
             pose.orientation.w = 1.0
 
-            cube = CollisionObject()
-            cube.id              = cid
-            cube.header          = Header(frame_id=BASE)
-            cube.primitives      = [prim_cube]
-            cube.primitive_poses = [pose]
-            cube.operation       = CollisionObject.ADD
-            cube_objs.append(cube)
+            co = CollisionObject()
+            co.id              = cid
+            co.header          = Header(frame_id=self.base)
+            co.primitives      = [prim]
+            co.primitive_poses = [pose]
+            co.operation       = CollisionObject.ADD
+            cubes.append(co)
 
-            cube_colors.append(ObjectColor(id=cid, color=col))
+            colors.append(ObjectColor(id=cid, color=col))
+
+            # cache init pose               ───── NEW
+            self.cube_pose_cache[cid] = pose
 
         scene = PlanningScene()
-        scene.is_diff        = True
-        scene.world          = PlanningSceneWorld(collision_objects=cube_objs)
-        scene.object_colors  = cube_colors
+        scene.is_diff = True
+        scene.world   = PlanningSceneWorld(collision_objects=cubes)
+        scene.object_colors = colors
 
         cli = self.create_client(ApplyPlanningScene, "/apply_planning_scene")
         cli.wait_for_service()
         cli.call_async(ApplyPlanningScene.Request(scene=scene))
-        self.get_logger().info("Kuber lagt til i planning-scenen.")
-        time.sleep(0.3)   # la meldingen gå igjennom
+        self.get_logger().info("Cubes added to planning scene.")
+        time.sleep(0.3)
 
     # ----------------------------------------------------------
-    def broadcast_initial_tf(self):
-        """Send én TF-melding for hver kube (init-posisjon)."""
-        for cid, x in zip(CUBE_IDS, CUBE_X):
+    def publish_all_tf(self):
+        """Broadcast cached poses for every cube (10 Hz)."""
+        now = self.get_clock().now().to_msg()
+        for cid, pose in self.cube_pose_cache.items():
             tf = TransformStamped()
-            tf.header.stamp = self.get_clock().now().to_msg()
-            tf.header.frame_id = BASE
+            tf.header.stamp    = now
+            tf.header.frame_id = self.base
             tf.child_frame_id  = cid
-            tf.transform.translation.x = x
-            tf.transform.translation.z = CUBE_Z
-            tf.transform.rotation.w    = 1.0
+            tf.transform.translation.x = pose.position.x
+            tf.transform.translation.y = pose.position.y
+            tf.transform.translation.z = pose.position.z
+            tf.transform.rotation      = pose.orientation
             self.br.sendTransform(tf)
-        self.get_logger().info("Initiale TF-rammer sendt.")
 
     # ----------------------------------------------------------
     def scene_callback(self, msg: PlanningScene):
-        """Oppdater TF når kuber flyttes interaktivt i RViz."""
+        """Update cached pose when user drags cube in RViz."""
         for obj in msg.world.collision_objects:
             if obj.id in CUBE_IDS and obj.primitive_poses:
-                pose = obj.primitive_poses[0]
-                tf = TransformStamped()
-                tf.header.stamp = msg.scene_time
-                tf.header.frame_id = BASE
-                tf.child_frame_id  = obj.id
-                tf.transform.translation = pose.position
-                tf.transform.rotation   = pose.orientation
-                self.br.sendTransform(tf)
+                self.cube_pose_cache[obj.id] = obj.primitive_poses[0]
 
 # --------------------------------------------------------------
 def main(args=None):

@@ -5,6 +5,8 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
@@ -21,8 +23,7 @@ public:
                                                std::vector<double>{});
         declare_parameter<double>("velocity_scaling", 0.2);
         declare_parameter<double>("acceleration_scaling", 0.2);
-
-        declare_parameter<std::vector<double>>("mock_cubes_xy", {});
+        
         declare_parameter<double>("z_offset", 0.10);
     }
     ~CubePointerController() override
@@ -35,6 +36,8 @@ public:
     /** must be called once AFTER the node is wrapped in a shared_ptr */
     void initMoveGroup()
     {
+        tf_listener_ = std::make_unique<tf2_ros::TransformListener>(tf_buffer_);
+
         // ── parameters ───────────────────────────────────────────────
         home_joints_ = get_parameter("home_joint_values")
                            .as_double_array();
@@ -75,8 +78,8 @@ public:
         srv_resume_ = create_service<Trigger>(
             "resume",
             [this](
-                const std::shared_ptr<Trigger::Request> req, //  ✱ explicit
-                std::shared_ptr<Trigger::Response> res)      //  ✱ explicit
+                const std::shared_ptr<Trigger::Request> req, 
+                std::shared_ptr<Trigger::Response> res)    
             {
                 (void)req;
                 if (!paused_)
@@ -106,7 +109,7 @@ public:
 
         RCLCPP_INFO(get_logger(), "Services [/stop] [/resume] [/restart] ready.");
 
-        loadMockCubes(); // +++
+        refreshCubeList();
         sequence_thread_ = std::thread([this]
                                        {
         // run until node is shutting down
@@ -114,7 +117,7 @@ public:
             if (restart_requested_.load()) {
                 // reload cubes & state
                 cube_poses_.clear();
-                loadMockCubes();          // (later: pull fresh /cube_tf list)
+                refreshCubeList();          // (later: pull fresh /cube_tf list)
                 current_index_ = 0;
                 paused_.store(false);
                 restart_requested_.store(false);
@@ -126,7 +129,6 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         } });
-        
     }
 
 private:
@@ -162,27 +164,36 @@ private:
         res->message = res->success ? "Reached home" : "Execution aborted";
     }
 
-    void loadMockCubes()
+    void refreshCubeList()
     {
-        auto flat = get_parameter("mock_cubes_xy").as_double_array();
+        cube_poses_.clear();
+        static const std::vector<std::string> names = {"cube1", "cube2", "cube3"};
         double z = get_parameter("z_offset").as_double();
 
-        for (size_t i = 0; i + 1 < flat.size(); i += 2)
+        for (const auto &name : names)
         {
+            geometry_msgs::msg::TransformStamped tf;
+            try
+            {
+                tf = tf_buffer_.lookupTransform("base_link", name, rclcpp::Time(0));
+            }
+            catch (const tf2::TransformException &e)
+            {
+                continue; // cube not visible right now
+            }
             geometry_msgs::msg::Pose p;
-            p.position.x = flat[i];
-            p.position.y = flat[i + 1];
+            p.position.x = tf.transform.translation.x;
+            p.position.y = tf.transform.translation.y;
             p.position.z = z;
-
-            // tool pointing straight down: 180° about X  ->  quaternion (1,0,0,0)
+            p.orientation.x = 1.0; // tool Z down
             p.orientation.w = 0.0;
-            p.orientation.x = 1.0;
             p.orientation.y = 0.0;
             p.orientation.z = 0.0;
 
             cube_poses_.push_back(p);
         }
     }
+
     void planNextCube()
     {
         if (paused_.load())
@@ -235,6 +246,9 @@ private:
 
     rclcpp::Service<Trigger>::SharedPtr srv_restart_;
     std::atomic_bool restart_requested_{false};
+
+    tf2_ros::Buffer tf_buffer_{get_clock()};
+    std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 // ----------------------------------------------------------------
