@@ -18,7 +18,10 @@
         "/home/sebastian/ws_moveit/install/moveit_msgs/lib/python3.12/site-packages",
         "/home/sebastian/ws_moveit/install/moveit_configs_utils/lib/python3.12/site-packages",
         "/opt/ros/jazzy/lib/python3.12/site-packages"
-    ]
+    ],
+    "files.associations": {
+        "functional": "cpp"
+    }
 }
 
 

@@ -26,7 +26,7 @@ class InteractiveScene(Node):
         pose = Pose()
         pose.position.x = 0.0                       
         pose.position.y = 0.30
-        pose.position.z = -0.025                     # senterhøyde
+        pose.position.z = -0.03                     # senterhøyde
         pose.orientation.w = 1.0                     # ingen rotasjon
 
         obj.primitives      = [prim]

@@ -23,8 +23,8 @@ public:
                                                std::vector<double>{});
         declare_parameter<double>("velocity_scaling", 0.2);
         declare_parameter<double>("acceleration_scaling", 0.2);
-        
-        declare_parameter<double>("z_offset", 0.10);
+
+        declare_parameter<double>("z_offset", 0.15);
     }
     ~CubePointerController() override
     {
@@ -49,7 +49,12 @@ public:
         move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
             shared_from_this(), "ur_manipulator");
 
-        move_group_->setPlannerId("PTP");
+        // move_group_->setPlanningPipelineId("pilz_industrial_motion_planner");
+        move_group_->setPlannerId("PTP"); // PTP
+        move_group_->setGoalOrientationTolerance(0.1);
+        // move_group_->setPlanningTime(10.0);
+
+        // move_group_->setPlannerId("PTP");
         move_group_->setMaxVelocityScalingFactor(vel_scaling);
         move_group_->setMaxAccelerationScalingFactor(acc_scaling);
         RCLCPP_INFO(get_logger(), "MoveGroup ready.");
@@ -78,8 +83,8 @@ public:
         srv_resume_ = create_service<Trigger>(
             "resume",
             [this](
-                const std::shared_ptr<Trigger::Request> req, 
-                std::shared_ptr<Trigger::Response> res)    
+                const std::shared_ptr<Trigger::Request> req,
+                std::shared_ptr<Trigger::Response> res)
             {
                 (void)req;
                 if (!paused_)
@@ -100,7 +105,7 @@ public:
                    std::shared_ptr<Trigger::Response> res)
             {
                 (void)req;
-                paused_.store(true);          // freeze worker
+                paused_.store(true);            // freeze worker
                 restart_requested_.store(true); // flag for thread
                 res->success = true;
                 res->message = "Sequence restart requested.";
@@ -197,12 +202,10 @@ private:
     void planNextCube()
     {
         if (paused_.load())
-            return; // wait for /resume
+            return;
 
         if (current_index_ >= cube_poses_.size())
         {
-            // Finished all cubes – return home
-            paused_.store(false);
             handleGoHome(nullptr, std::make_shared<Trigger::Response>());
             return;
         }
@@ -210,22 +213,55 @@ private:
         move_group_->stop();
         move_group_->clearPoseTargets();
         move_group_->setStartStateToCurrentState();
-        move_group_->setPoseTarget(cube_poses_[current_index_]);
 
-        moveit::planning_interface::MoveGroupInterface::Plan plan;
-        if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS)
-        {
-            current_index_++;
-            auto exec_res = move_group_->execute(plan); // blocking
+        // ---------- IK check -------------------------------------------------
+        const auto &goal = cube_poses_[current_index_];
+        bool ik_ok = move_group_->setPoseTarget(goal); // tests IK only
+        RCLCPP_INFO(get_logger(), "IK for cube %zu ?  %s",
+                    current_index_, ik_ok ? "YES" : "NO");
+        if (!ik_ok)
+        { // unreachable pose
+            ++current_index_;
+            return;
+        }
 
-            if (exec_res != moveit::core::MoveItErrorCode::SUCCESS)
-                RCLCPP_WARN(get_logger(), "Execution to cube %zu aborted.", current_index_ - 1);
-        }
-        else
+        // ---------- common planning settings ---------------------------------
+        move_group_->setGoalPositionTolerance(0.005);   // 5 mm
+        move_group_->setGoalOrientationTolerance(0.10); // ~6°
+        move_group_->setPlanningTime(10.0);             // seconds
+
+        using Plan = moveit::planning_interface::MoveGroupInterface::Plan;
+
+        auto try_plan = [&](const std::string &pipeline,
+                            const std::string &planner,
+                            Plan &out) -> bool // ← returns success flag
         {
-            RCLCPP_WARN(get_logger(), "Planning to cube %zu failed, skipping.", current_index_);
-            current_index_++;
+            move_group_->setPlanningPipelineId(pipeline);
+            move_group_->setPlannerId(planner);
+            return move_group_->plan(out) == moveit::core::MoveItErrorCode::SUCCESS;
+        };
+
+        Plan plan; // one instance
+
+        bool got_plan = try_plan("pilz_industrial_motion_planner", "LIN", plan);
+
+        if (!got_plan) // fallback
+            got_plan = try_plan("pilz_industrial_motion_planner", "PTP", plan);
+
+        if (!got_plan)
+        {
+            RCLCPP_WARN(get_logger(),
+                        "Planning to cube %zu failed with both LIN and PTP. Skipping.",
+                        current_index_);
+            ++current_index_;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            return;
         }
+
+        ++current_index_; // advance before execute()
+        auto exec_res = move_group_->execute(plan);
+        if (exec_res != moveit::core::MoveItErrorCode::SUCCESS)
+            RCLCPP_WARN(get_logger(), "Execution to cube %zu aborted.", current_index_ - 1);
     }
 
     // ---------- members -------------------------------------------

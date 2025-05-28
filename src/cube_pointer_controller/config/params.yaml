@@ -12,4 +12,4 @@ cube_pointer_controller:
     # Re-plan thresholds
     replan_threshold_xyz:  0.02     # metres
 
-    z_offset:          0.10          # tool-tip 10 cm above table
+    z_offset:          0.15          # tool-tip 10 cm above table

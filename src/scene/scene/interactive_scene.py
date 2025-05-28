@@ -18,7 +18,7 @@ import time
 # ───── cube parameters ──────────────────────────────────────────
 CUBE_SIZE = 0.05                     # 5 cm
 CUBE_Z    = 0.025                    # centre height
-CUBE_X    = (-0.30, 0.50, 0.30)       # three x-positions
+CUBE_X    = (-0.30, 0.00, 0.30)       # three x-positions
 
 CUBE_IDS  = [f"cube{i+1}" for i in range(3)]
 CUBE_COL  = (
