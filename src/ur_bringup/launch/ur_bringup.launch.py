@@ -11,6 +11,7 @@ def generate_launch_description():
     ur_type = LaunchConfiguration("ur_type")
     robot_ip = LaunchConfiguration("robot_ip")
     use_fake_hw = LaunchConfiguration("use_fake_hardware")
+    initial_joint_controller = LaunchConfiguration("initial_joint_controller")
 
     declare_args = [
         DeclareLaunchArgument(
