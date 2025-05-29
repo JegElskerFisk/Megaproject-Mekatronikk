@@ -1,50 +1,86 @@
 #!/usr/bin/env python3
+# table_publisher.py - Publiserer et statisk bord til MoveIt-planleggingsscenen
+
 import rclpy
 from rclpy.node import Node
-from moveit_msgs.msg import CollisionObject
+from moveit_msgs.msg import CollisionObject, PlanningScene, PlanningSceneWorld
+from moveit_msgs.srv import ApplyPlanningScene
 from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import Pose
-from std_msgs.msg import Header
+from std_msgs.msg import Header, ColorRGBA
+from moveit_msgs.msg import ObjectColor
 import time
 
-
-class InteractiveScene(Node):
+class TablePublisher(Node):
     def __init__(self):
-        super().__init__("interactive_scene")
+        super().__init__("table_publisher")
+        
+        # Opprett klient for ApplyPlanningScene-tjenesten
+        self.apply_scene_client = self.create_client(
+            ApplyPlanningScene, 
+            "/apply_planning_scene"
+        )
+        
+        # Vent til tjenesten er tilgjengelig
+        while not self.apply_scene_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Tjeneste ikke tilgjengelig, venter...')
+        
+        self.publish_table()
 
-        pub = self.create_publisher(CollisionObject, "/collision_object", 10)
-
-        # ── bygg bordet ─────────────────────────────────────────
-        obj = CollisionObject()
-        obj.header = Header(frame_id="base_link")    # tilpass om nødvendig
-        obj.id = "table_1"
-
-        prim = SolidPrimitive()
-        prim.type = SolidPrimitive.BOX
-        prim.dimensions = [2.0, 1.0, 0.05]           # L × B × H i meter
-
-        pose = Pose()
-        pose.position.x = 0.0                       
-        pose.position.y = 0.30
-        pose.position.z = -0.03                     # senterhøyde
-        pose.orientation.w = 1.0                     # ingen rotasjon
-
-        obj.primitives      = [prim]
-        obj.primitive_poses = [pose]
-        obj.operation       = CollisionObject.ADD
-
-        # ── publiser én gang ───────────────────────────────────
-        pub.publish(obj)
-        self.get_logger().info("Publiserte bord-objektet")
-
-        time.sleep(0.3)  # la meldingen nå ut
+    def publish_table(self):
+        """Bygg og publiser bordet til planleggingsscenen."""
+        # ─── Konfigurer bordet ───────────────────────────────────
+        table_obj = CollisionObject()
+        table_obj.header = Header(frame_id="base_link")  # Endre om nødvendig
+        table_obj.id = "table_1"
+        
+        # Definer geometri
+        table_prim = SolidPrimitive()
+        table_prim.type = SolidPrimitive.BOX
+        table_prim.dimensions = [2.0, 1.0, 0.05]  # L × B × H i meter
+        
+        # Definer posisjon og orientering
+        table_pose = Pose()
+        table_pose.position.x = 0.0
+        table_pose.position.y = 0.30
+        table_pose.position.z = -0.025  # Halvparten av høyden under origo
+        table_pose.orientation.w = 1.0  # Ingen rotasjon
+        
+        table_obj.primitives = [table_prim]
+        table_obj.primitive_poses = [table_pose]
+        table_obj.operation = CollisionObject.ADD
+        
+        # ─── Opprett scenemelding ────────────────────────────────
+        scene = PlanningScene()
+        scene.is_diff = True
+        scene.world = PlanningSceneWorld(collision_objects=[table_obj])
+        
+        # Legg til farge for bedre visualisering
+        table_color = ObjectColor()
+        table_color.id = table_obj.id
+        table_color.color = ColorRGBA(r=0.8, g=0.8, b=0.8, a=1.0)  # Lys grå
+        scene.object_colors = [table_color]
+        
+        # ─── Send til planleggingsscenen ─────────────────────────
+        request = ApplyPlanningScene.Request(scene=scene)
+        future = self.apply_scene_client.call_async(request)
+        
+        # Vent på svar (ikke nødvendig, men god praksis)
+        rclpy.spin_until_future_complete(self, future)
+        
+        if future.result() is not None:
+            self.get_logger().info("Bordet ble lagt til i planleggingsscenen")
+        else:
+            self.get_logger().error("Kunne ikke legge til bordet")
+        
+        # Vent litt for å sikre at meldingen når frem
+        time.sleep(0.5)
         rclpy.shutdown()
-
 
 def main(args=None):
     rclpy.init(args=args)
-    InteractiveScene()
-
+    node = TablePublisher()
+    rclpy.spin(node)  # Vil avslutte etter publish_table()
 
 if __name__ == "__main__":
     main()
