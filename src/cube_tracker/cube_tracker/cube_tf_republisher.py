@@ -19,7 +19,7 @@ class CubeTfRepublisher(Node):
         # 2) sub to the *raw* camera‐frame positions
         self.sub = self.create_subscription(
             String,            # same message type
-            'cube_positions',  # raw camera positions
+            'cube_positions_cam',  # raw camera positions
             self.cb, 10
         )
         # 3) pub back to the *same* topic name,
@@ -42,9 +42,9 @@ class CubeTfRepublisher(Node):
             p_cam = PointStamped()
             p_cam.header.frame_id = 'camera_link'
             p_cam.header.stamp    = self.get_clock().now().to_msg()
-            p_cam.point.x        = c['x']
-            p_cam.point.y        = c['y']
-            p_cam.point.z        = c.get('z', 0.0)
+            p_cam.point.x        = c['x'] / 100.0
+            p_cam.point.y        = c['y'] / 100.0
+            p_cam.point.z        = c.get('z', 0.0) / 100.0
 
             try:
                 # look up camera_link → base_link at “now”

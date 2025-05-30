@@ -19,7 +19,10 @@ class CubeDetector(Node):
         self.pub = self.create_publisher(String, 'cube_positions_cam', 10)
         self.image_pub = self.create_publisher(Image, 'image_raw', 10)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture(4, cv2.CAP_V4L2)
+        self.cap = cv2.VideoCapture(1,cv2.CAP_V4L2)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
         if not self.cap.isOpened():
             self.get_logger().error("Cannot open camera")
             exit(1)
@@ -63,7 +66,12 @@ class CubeDetector(Node):
 
     def compute_homography(self):
         img_pts = np.array([[100,100],[500,100],[500,500],[100,500]], dtype=np.float32)
-        world_pts = np.array([[0,0],[40,0],[40.0,40],[0,40]], dtype=np.float32)
+        world_pts = np.array([
+    [ 0 - 20,  0 - 20],   # = [-20, -20]
+    [40 - 20,  0 - 20],   # = [ 20, -20]
+    [40 - 20, 40 - 20],   # = [ 20,  20]
+    [ 0 - 20, 40 - 20],   # = [-20,  20]
+], dtype=np.float32)
         self.homography, _ = cv2.findHomography(img_pts, world_pts)
         self.homography_loaded = self.homography is not None
         if self.homography_loaded:
@@ -120,7 +128,7 @@ class CubeDetector(Node):
                     'id': f"{color}cube{idx}",
                     'x': x_m,
                     'y': y_m,
-                    'z': z_m
+                    'z': z_cm
                 })
 
                 # Draw box & label
@@ -151,4 +159,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

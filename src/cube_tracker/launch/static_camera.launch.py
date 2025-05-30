@@ -11,7 +11,7 @@ def generate_launch_description():
             name='camera_static_tf',
             output='screen',
             arguments=[
-                '0.07','0.0','0.0',   # X Y Z (meters)
+                '0.07','0.0','0.07',# X Y Z (meters)
                 '0','0','0.0',     # roll pitch yaw (radians)
                 'tool0',             # parent = your wrist link
                 'camera_link'        # child  = the camera frame you use
