@@ -19,6 +19,7 @@ import time
 CUBE_SIZE = 0.05                     # 5 cm
 CUBE_Z    = 0.025                    # centre height
 CUBE_X    = (-0.30, 0.00, 0.30)       # three x-positions
+CUBE_Y    = (-0.30, -0.30, -0.30)       # three y-positions
 
 CUBE_IDS  = [f"cube{i+1}" for i in range(3)]
 CUBE_COL  = (
@@ -61,10 +62,10 @@ class InteractiveScene(Node):
                               dimensions=[CUBE_SIZE] * 3)
 
         cubes, colors = [], []
-        for cid, x, col in zip(CUBE_IDS, CUBE_X, CUBE_COL):
+        for cid, x, y, col in zip(CUBE_IDS, CUBE_X, CUBE_Y, CUBE_COL):
             pose = Pose()
             pose.position.x = x
-            pose.position.y = -0.3
+            pose.position.y = y
             pose.position.z = CUBE_Z
             pose.orientation.w = 1.0
 

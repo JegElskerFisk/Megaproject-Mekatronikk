@@ -37,13 +37,13 @@ class TablePublisher(Node):
         # Definer geometri
         table_prim = SolidPrimitive()
         table_prim.type = SolidPrimitive.BOX
-        table_prim.dimensions = [2.0, 1.0, 0.05]  # L × B × H i meter
+        table_prim.dimensions = [1.25, 0.85, 0.05]  # L × B × H i meter
         
         # Definer posisjon og orientering
         table_pose = Pose()
-        table_pose.position.x = 0.0
-        table_pose.position.y = 0.30
-        table_pose.position.z = -0.025  
+        table_pose.position.x = 0.5
+        table_pose.position.y = 0.00
+        table_pose.position.z = -0.035  
         table_pose.orientation.w = 1.0  
         
         table_obj.primitives = [table_prim]

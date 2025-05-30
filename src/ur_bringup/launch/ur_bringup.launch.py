@@ -53,7 +53,7 @@ def generate_launch_description():
         }.items(),
     )
 
-    moveit = IncludeLaunchDescription(
+    ur_moveit_ = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 FindPackageShare("ur_moveit_config").find("ur_moveit_config"),
@@ -67,4 +67,4 @@ def generate_launch_description():
         }.items(),
     )
 
-    return LaunchDescription(declare_args + [ur_driver, moveit])
+    return LaunchDescription(declare_args + [ur_driver, ur_moveit_])
