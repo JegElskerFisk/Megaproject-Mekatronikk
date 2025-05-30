@@ -31,7 +31,7 @@ class TablePublisher(Node):
         """Bygg og publiser bordet til planleggingsscenen."""
         # ─── Konfigurer bordet ───────────────────────────────────
         table_obj = CollisionObject()
-        table_obj.header = Header(frame_id="base_link")  # Endre om nødvendig
+        table_obj.header = Header(frame_id="base_link")  
         table_obj.id = "table_1"
         
         # Definer geometri
@@ -43,8 +43,8 @@ class TablePublisher(Node):
         table_pose = Pose()
         table_pose.position.x = 0.0
         table_pose.position.y = 0.30
-        table_pose.position.z = -0.025  # Halvparten av høyden under origo
-        table_pose.orientation.w = 1.0  # Ingen rotasjon
+        table_pose.position.z = -0.025  
+        table_pose.orientation.w = 1.0  
         
         table_obj.primitives = [table_prim]
         table_obj.primitive_poses = [table_pose]
@@ -65,7 +65,7 @@ class TablePublisher(Node):
         request = ApplyPlanningScene.Request(scene=scene)
         future = self.apply_scene_client.call_async(request)
         
-        # Vent på svar (ikke nødvendig, men god praksis)
+        
         rclpy.spin_until_future_complete(self, future)
         
         if future.result() is not None:
@@ -73,7 +73,7 @@ class TablePublisher(Node):
         else:
             self.get_logger().error("Kunne ikke legge til bordet")
         
-        # Vent litt for å sikre at meldingen når frem
+        
         time.sleep(0.5)
         rclpy.shutdown()
 

@@ -31,20 +31,20 @@ class InteractiveScene(Node):
     def __init__(self):
         super().__init__("interactive_scene")
 
-        # parameter to match your robot base frame  ───── NEW
+        # parameter to match your robot base frame  
         self.declare_parameter("base", "base")
         self.base = self.get_parameter("base").get_parameter_value().string_value
 
         # TF broadcaster
         self.br = tf2_ros.TransformBroadcaster(self)
 
-        # internal pose cache              ───── NEW
+        # internal pose cache             
         self.cube_pose_cache = {}
 
         # 1) build & send cubes to planning scene
         self.add_cubes_to_planning_scene()
 
-        # 2) broadcast TF at 10 Hz         ───── NEW
+        # 2) broadcast TF at 10 Hz         
         self.create_timer(0.1, self.publish_all_tf)   # 10 Hz
 
         # 3) listen for interactive moves and update cache
@@ -78,7 +78,7 @@ class InteractiveScene(Node):
 
             colors.append(ObjectColor(id=cid, color=col))
 
-            # cache init pose               ───── NEW
+            # cache init pose              
             self.cube_pose_cache[cid] = pose
 
         scene = PlanningScene()
