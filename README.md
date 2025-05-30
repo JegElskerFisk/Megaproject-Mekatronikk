@@ -1,6 +1,6 @@
-# UR3 Cube Interaction – ROS 2 Workspace
+# UR-robot Cube Pointer – ROS 2 Workspace
 
-Dette prosjektet består av flere ROS 2-pakker som sammen kontrollerer en UR3-robotarm til å peke på tre kuber i en planleggingsscene. Systemet bruker MoveIt for planlegging og utførelse, samt TF2 for å oppdatere posisjonene til objektene i sanntid.
+Dette prosjektet består av flere ROS 2-pakker som sammen kontrollerer en UR-robotarm til å peke på tre kuber i en planleggingsscene. Systemet bruker MoveIt for planlegging og utførelse, samt TF2 for å oppdatere posisjonene til objektene i sanntid.
 
 ---
 
@@ -37,7 +37,7 @@ Systemet er koblet sammen via følgende noder og topics:
 | `/move_action`                                 | Brukes av `cube_pointer_controller` for å sende mål til MoveIt |
 | `/apply_planning_scene`                        | Brukes av `scene`-pakkens noder for å legge til objekter |
 | `/monitored_planning_scene`                    | Brukes av `interactive_scene` for å oppdage interaktive endringer i RViz |
-| `/tf`                                          | Kringkaster posisjonene til `cube1`, `cube2`, `cube3` |
+| `/tf`                                          | Publisere posisjonene til `cube1`, `cube2`, `cube3` |
 | `/robot_state_publisher`, `/joint_states`      | Standard robottoppics |
 | `/scaled_joint_trajectory_controller`          | Utfører planlagte bevegelser |
 | `/move_group`                                  | Planleggingsnode fra MoveIt |
@@ -73,7 +73,7 @@ ros2 launch cube_pointer_controller controller.launch.py
 
 Systemet krever:
 
-- ROS 2 Humble eller nyere
+- ROS 2 Jazzy
 - `moveit_ros_planning_interface`
 - `tf2_ros`, `geometry_msgs`, `std_srvs`
 - UR3 MoveIt-konfigurasjon (`ur_bringup` / `Universal_Robots_ROS2_Driver`)
