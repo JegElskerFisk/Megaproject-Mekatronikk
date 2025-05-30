@@ -1,6 +1,6 @@
 # cube_pointer_controller
 
-En ROS 2-node som bruker MoveIt og TF2 til å styre en UR-manipulator mot tre kuber i rekkefølge. Robotarmen peker på hver kube basert på posisjonene deres i TF-rammen, og returnerer til hjemmeposisjon etterpå. Systemet benytter MoveIt's actiongrensesnitt og støtter restart og hjemposisjonering via tjenester.
+En ROS 2-node som bruker MoveIt og TF2 til å styre en UR-manipulator mot tre kuber i rekkefølge. Robotarmen peker på hver kube basert på posisjonene deres i TF-rammen, og returnerer til hjemmeposisjon etterpå. Systemet benytter MoveIt's actiongrensesnitt og støtter restart som tjeneste.
 
 ---
 
@@ -24,7 +24,7 @@ Denne pakken inneholder én hovednode (`controller_node.cpp`) som:
 - Lytter etter posisjoner til `cube1`, `cube2`, `cube3` i TF
 - Planlegger bevegelser for å peke på dem i rekkefølge
 - Sender roboten hjem etter siste kube
-- Har støtte for pause, restart og hjemposisjonering via tjenester
+- Har støtte for pause og restart
 
 ---
 
@@ -84,8 +84,7 @@ Plassert i `config/params.yaml`:
 
 | Tjeneste   | Funksjon                          |
 |------------|-----------------------------------|
-| `/restart` | Starter sekvensen fra kube 1     |
-| `/go_home` | Sender roboten til hjemposisjon  |
+| `/restart` | Starter sekvensen fra kube 1      |
 
 ---
 
