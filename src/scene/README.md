@@ -1,6 +1,6 @@
 # scene
 
-Publiserer kollisjonsobjekter (kuber og bord) til MoveIt-planleggingsscenen, og kringkaster posisjonene deres via TF. Pakken er nyttig for å simulere interaksjon med flere objekter i RViz.
+Publiserer kollisjonsobjekter (kuber og bord) til MoveIt-planleggingsscenen, og publiserer posisjonene deres via TF. Pakken er nyttig for å simulere interaksjon med flere objekter i RViz.
 
 ---
 
