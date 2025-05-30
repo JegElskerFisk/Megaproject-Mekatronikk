@@ -75,7 +75,7 @@ Plassert i `config/params.yaml`:
 
 | Parameter            | Beskrivelse                                  | Standardverdi    |
 |----------------------|----------------------------------------------|------------------|
-| `home_joint_values`  | Liste med 6 joint-verdier for hjemposisjon   | `[]`             |
+| `home_joint_values`  | Liste med 6 joint-verdier for hjemposisjon   | `[-1.57,-1.57, 0.0, -1.57, 0.0, 0.0]`             |
 | `z_offset`           | Høyde over kuben for pekerposisjon           | `0.20`           |
 
 ---
